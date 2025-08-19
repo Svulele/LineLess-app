@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>LineLess</title>
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%233b82f6%22/><text x=%2250%22 y=%2270%22 font-size=%2270%22 text-anchor=%22middle%22 fill=%22white%22>L</text></svg>">
+
+
+<link href="style.css" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+<div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-box">
+          <div class="logo-glyph">
+            <div class="bar a"></div>
+            <div class="bar b"></div>
+          </div>
+        </div>
+
+        <div>
+          <h1>LineLess</h1>
+          <div class="tag">Know when it’s your turn.</div>
+        </div>
+      </div>
+
+      <nav>
+        <button id="tab-citizen" class="active">Citizen</button>
+        <button id="tab-admin">Admin</button>
+      </nav>
+    </header>
+
+    <main id="view-citizen">
+      <div class="grid">
+        <section class="card">
+          <h2>Find a service</h2>
+          <div id="service-list" class="list"></div>
+        </section>
+
+        <section class="card">
+          <h2 id="details-title">Queue details</h2>
+          <div id="details-content" class="muted">Select a service to view details and join the queue.</div>
+        </section>
+
+        <section class="card">
+          <h2>My Ticket</h2>
+          <div id="my-ticket" class="muted">You haven’t joined a queue yet.</div>
+        </section>
+      </div>
+    </main>
+
+    <main id="view-admin" style="display:none">
+      <div class="grid">
+        <section class="card">
+          <h2>Admin – Select a service</h2>
+          <div id="admin-service-list" class="list"></div>
+        </section>
+
+        <section class="card">
+          <div class="row space">
+            <h2 id="admin-details-title">Manage queue</h2>
+            
+            <button id="toggle-open" class="btn" style="display:none">Close Queue</button>
+          </div>
+          <div id="admin-details-content" class="muted">Select a service to manage the queue.</div>
+        </section>
+      </div>
+    </main>
+
+    <footer>© <span id="year"></span> LineLess</footer>
+  </div>
+
+
+
+  <script src="main.js" type="module"></script>
+</body>
+</html>
