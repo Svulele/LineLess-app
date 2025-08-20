@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html eng="en">
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>LineLess</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LineLess – Citizen</title>
 
-<link href="style.css" rel="stylesheet" type="text/css" />
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
 
+  <link href="style.css" rel="stylesheet"  />
 </head>
-<div class="container">
+<body>
+  <div class="container">
     <header>
       <div class="logo">
         <div class="logo-box">
@@ -17,16 +20,14 @@
             <div class="bar b"></div>
           </div>
         </div>
-
         <div>
           <h1>LineLess</h1>
           <div class="tag">Know when it’s your turn.</div>
         </div>
       </div>
-
+      
       <nav>
-        <button id="tab-citizen" class="active">Citizen</button>
-        <button id="tab-admin">Admin</button>
+        <button id="logout-btn" class="btn secondary">Logout</button>
       </nav>
     </header>
 
@@ -49,29 +50,9 @@
       </div>
     </main>
 
-    <main id="view-admin" style="display:none">
-      <div class="grid">
-        <section class="card">
-          <h2>Admin – Select a service</h2>
-          <div id="admin-service-list" class="list"></div>
-        </section>
-
-        <section class="card">
-          <div class="row space">
-            <h2 id="admin-details-title">Manage queue</h2>
-            
-            <button id="toggle-open" class="btn" style="display:none">Close Queue</button>
-          </div>
-          <div id="admin-details-content" class="muted">Select a service to manage the queue.</div>
-        </section>
-      </div>
-    </main>
-
     <footer>© <span id="year"></span> LineLess</footer>
   </div>
 
-
-
-  <script src="main.js"></script>
+  <script src="./citizen.js" type="module"></script>
 </body>
 </html>
