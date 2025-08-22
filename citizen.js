@@ -1,9 +1,10 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, collection, onSnapshot, addDoc, getDocs 
+  getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 
+// --- Firebase config ---
 const firebaseConfig = { 
   apiKey: "AIzaSyDeRGnfXe_1TdsPfOnb164JKrrrNK4Z8Gc",
   authDomain: "lineless-37f9f.firebaseapp.com",
@@ -24,151 +25,217 @@ let myTicket = null;
 function $(sel){ return document.querySelector(sel); }
 function serviceById(id){ return services.find(s => s.id === id); }
 
-// ETA badge helper
-function etaBadge(queueLength){
-  let text = `ETA ~${queueLength*5}m`;
-  if(queueLength < 3) return `<span class="badge green">${text}</span>`;
-  if(queueLength < 7) return `<span class="badge amber">${text}</span>`;
-  return `<span class="badge red">${text}</span>`;
+async function hashID(id) {
+  //const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id));
+  //return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  return id;
 }
 
-// --- Listen to services in Firestore ---
-function listenToServices(){
-  const servicesRef = collection(db, "services");
-  onSnapshot(servicesRef, async (snapshot) => {
-    services = [];
-    const promises = snapshot.docs.map(async (docSnap) => {
-      const svcData = { id: docSnap.id, ...docSnap.data(), queue: [] };
+// --- ETA badge helper ---
+function etaBadge(queueLength, avgMins = 5){
+  const eta = queueLength * avgMins;
+  let text = `ETA ~${eta}m`;
+  if(eta < 15) return `<span class="badge green">${text}</span>`;
+  if(eta < 30) return `<span class="badge amber">${text}</span>`;
+  return `<span class="badge red">${text}</span>`;
+}
+function debounce(fn, delay = 50){
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
 
-      // fetch subcollection queue
-      const qRef = collection(db, "services", docSnap.id, "queue");
-      const qSnap = await getDocs(qRef);
-      qSnap.forEach(qd => {
-        svcData.queue.push(qd.data());
+const debouncedRender = debounce(() => {
+  renderServiceList();
+  renderDetails();
+  renderMyTicket();
+});
+
+// --- Listen to all services ---
+function listenToServices() {
+  const servicesRef = collection(db, "services");
+
+  onSnapshot(servicesRef, snapshot => {
+   const  newServices = [];
+
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+
+
+      // Fill defaults if missing
+      const svcData = {
+        id: docSnap.id,
+        name: data.name || "Unnamed Service",
+        open: data.open !== undefined ? data.open : true,
+        avgMinsPerPerson: data.avgMinsPerPerson || 5,
+        queue: []
+      };
+      // Listen to queue of each service
+      const qRef = query(collection(db, "services", docSnap.id, "queue"), orderBy("createdAt"));
+      onSnapshot(qRef, qSnap => {
+
+
+        svcData.queue = [];
+        qSnap.forEach(qd => {
+          const qData = qd.data();
+
+          // human readable ticket number
+          const ticketNum = qData.ticketNumber || `#${qSnap.docs.indexOf(qd) + 1}`;
+          const idNum     = qData.idNumber   || "Unknown";
+
+          svcData.queue.push({
+            ticketNumber: ticketNum,
+            idNumber: idNum,
+            id: qd.id,
+            createdAt: qData.createdAt || null
+          });
+        });
+
+        svcData.queue.sort((a, b) => {
+          const aTime = a.createdAt ? a.createdAt.seconds : 0;
+          const bTime = b.createdAt ? b.createdAt.seconds : 0;
+          return aTime - bTime;
+        });
+
+        debouncedRender();
       });
 
-      services.push(svcData);
+      newServices.push(svcData);
     });
-
-    await Promise.all(promises);
-    renderServiceList();
-    renderDetails();
-    renderMyTicket();
+    services = newServices;
+    debouncedRender();
   });
 }
 
-
-// --- Join queue & save to Firestore ---
-async function joinQueueFirestore(svc, name){
+// --- Join queue ---
+async function joinQueueFirestore(svc, idNumber){
   const queueRef = collection(db, "services", svc.id, "queue");
 
-  // Count queue length from Firestore
+  // Count existing queue
   const docs = await getDocs(queueRef);
   const queueLen = docs.size;
 
-  // Generate ticket
-  const newTicketId = (svc.name.split(" ")[0][0] + String(queueLen+1).padStart(2,"0")).toUpperCase();
+  // Generate ticket ID to be readable
+  const newTicketNumber = `${svc.name.slice(0,2).toUpperCase()}${queueLen+1}`;
 
-  // Save to DB
-  await addDoc(queueRef, { id: newTicketId, name });
+  // Add to Firestore
+  const docRef = await addDoc(queueRef, { 
+    ticketNumber: newTicketNumber,
+    idNumber: idNumber,
+    createdAt: serverTimestamp(), 
+  });
 
-  // Save locally
-  myTicket = { serviceId: svc.id, ticketId: newTicketId, name };
+  myTicket = { 
+    serviceId: svc.id, 
+    ticketId: docRef.id, 
+    ticketNumber: newTicketNumber,
+    idNumber: idNumber 
+  };
+  $("#queue-status").textContent = `You have joined the queue as ${newTicketNumber}!`;
   renderMyTicket();
 }
 
-// --- Render service list (with ETA on right) ---
+// --- Render service list ---
 function renderServiceList(){
   const wrap = $("#service-list");
   wrap.innerHTML = "";
-  services.forEach(s=>{
-    const queueLen = Array.isArray(s.queue) ? s.queue.length : 0;
+
+  services.forEach(s => {
+    const qlen = (s.queue || []).length;
+    const avgMins = s.avgMinsPerPerson || 5;
+    
     const btn = document.createElement("button");
     btn.className = "item";
     btn.innerHTML = `
       <div class="row space">
-        <div>
-          <div>${s.name}</div>
-          <div class="meta">${s.open ? "Open" : "Closed"} • ${queueLen} in queue</div>
-        </div>
-        <div>${etaBadge(queueLen)}</div>
+        <div>${s.name}${etaBadge(qlen, avgMins)}</div>
       </div>
+      <div class="meta">${s.open ? "Open" : "Closed"} • ${qlen} in queue</div>
     `;
-    btn.onclick = ()=>{ selectedServiceId = s.id; renderDetails(); };
+    btn.onclick = () => { selectedServiceId = s.id; renderDetails(); };
     wrap.appendChild(btn);
   });
 }
 
-// --- Render queue details (join input) ---
+// --- Render queue details ---
 function renderDetails(){
-  const content = $("#details-content");
   const svc = selectedServiceId ? serviceById(selectedServiceId) : null;
-  if(!svc){ content.textContent = "Select a service."; return; }
+  const title = $("#details-title");
+  const form = $("#queue-form");
 
-  content.innerHTML = `
-    <h2>${svc.name} ${etaBadge((svc.queue||[]).length)}</h2>
-    <input id="join-name" placeholder="Your name">
-    <button id="join-btn" class="btn primary">Join Queue</button>
-  `;
-  $("#join-btn").onclick = ()=>{
-    const name = $("#join-name").value.trim();
-    if(name) joinQueueFirestore(svc, name);
+  if(svc) {
+    title.innerHTML = `Queue details – ${svc.name} ${etaBadge((svc.queue||[]).length, svc.avgMinsPerPerson)}`;
+    form.style.display = "block";
+  } else {
+    title.textContent = "Queue details";
+    form.style.display = "none";
+  }
+
+  form.onsubmit = e => {
+    e.preventDefault();
+    const idNumber = $("#idCard").value.trim();
+    if(idNumber && svc) joinQueueFirestore(svc, idNumber);
+    $("#idCard").value = "";
   };
 }
 
-// --- Render ticket (position + ETA) ---
-async function renderMyTicket(){
+// --- Render my ticket ---
+function renderMyTicket(){
   const wrap = $("#my-ticket");
   if(!myTicket){ 
-    wrap.textContent = "No ticket yet."; 
+    wrap.textContent = "You haven’t joined a queue yet."; 
     return; 
   }
+
   const svc = serviceById(myTicket.serviceId);
   if(!svc){ 
     wrap.textContent = "Service not found."; 
     return; 
   }
 
-  // Fetch fresh queue directly from Firestore
-  const qRef = collection(db, "services", svc.id, "queue");
-  const docs = await getDocs(qRef);
-  const queue = [];
-  docs.forEach(d => queue.push(d.data()));
-
-  // Find my position (1-based)
-  let position = queue.findIndex(p => p.id === myTicket.ticketId);
-  position = (position !== -1) ? position + 1 : 0;
-
+  const queue = (svc.queue || []).filter(t => t.id);
+  const position = queue.findIndex(p => p.id === myTicket.ticketId) + 1;
   const total = queue.length;
 
-  // Ticket details
   wrap.innerHTML = `
-    <div class="ticket">
-      <strong>Your Ticket:</strong> ${myTicket.ticketId} <br>
-      <strong>Name:</strong> ${myTicket.name} <br>
-      <strong>Service:</strong> ${svc.name} <br>
-      <strong>Position:</strong> ${position} of ${total}
-    </div>
-
-    <div class="steps">
-      ${queue.map((q,i) => {
-        const cls = (i+1 < position) ? "done" : (i+1 === position ? "active" : "");
-        return `
-          <div class="step ${cls}">
-            <div class="dot"></div>
-            <div class="label">#${i+1}</div>
-          </div>`;
-      }).join("")}
-    </div>
-  `;
+  <div class="ticket">
+    <strong>Your Ticket:</strong> ${myTicket.ticketNumber} <br>
+    <strong>ID Number:</strong> ${myTicket.idNumber} <br>
+    <strong>Service:</strong> ${svc.name} <br>
+    <strong>Position:</strong> ${position > 0 ? position : "Waiting…"} of ${total} 
+  </div>
+  <div class="steps">
+    ${queue.map((t,i) => {
+      const cls = i+1 < position ? "done" : i+1 === position ? "active" : "";
+      return `<div class="step ${cls}">
+        <div class="dot"></div>
+        <div class="label">#${t.ticketNumber}</div>
+      </div>`;
+    }).join("")}
+  </div>
+`;
+highlightNextTicket();
 }
 
-
+function highlightNextTicket() {
+  const wrap = $("#my-ticket");
+  if(!myTicket) return;
+  const svc = serviceById(myTicket.serviceId);
+  const queue = (svc.queue || []);
+  const position = queue.findIndex(t => t.id === myTicket.ticketId) + 1;
+  if(position === 1) {
+    wrap.classList.add("flash"); 
+    setTimeout(() => wrap.classList.remove("flash"), 800);
+  }
+}
 
 // --- Logout ---
-$("#logout-btn").addEventListener("click", async ()=>{
+$("#logout-btn").addEventListener("click", async () => {
   await signOut(auth);
   window.location.href = "/login/login.html";
 });
 
+// --- Init ---
 listenToServices();

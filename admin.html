@@ -42,13 +42,27 @@
           <div id="admin-details-content" class="muted">Select a service to view/manage the queue.</div>
         </section>
       </div>
+      
+      <section class="card">
+        <h2>History</h2>
+        <div id="admin-history-content" class="muted">
+          <ul id="history-list" class="queue-list">
+            <p>No history yet.</p>
+          </ul>
+        </div>
+      </section>
     </main>
 
     <footer>
-      © <span id="year"></span> LineLess
+      <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
     </footer>
   </div>
-
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const yearSpan = document.getElementById("year");
+   if(yearSpan) yearSpan.textContent = new Date().getFullYear();
+    });
+  </script>
   <script type="module" src="./admin.js"></script>
 </body>
 </html>
