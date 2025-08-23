@@ -1,7 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { showSplash } from "/loading/splash.js";
+import { showSplash } from "../loading/splash.js"; // Make sure this path is correct
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDeRGnfXe_1TdsPfOnb164JKrrrNK4Z8Gc",
   authDomain: "lineless-37f9f.firebaseapp.com",
@@ -12,37 +13,31 @@ const firebaseConfig = {
   measurementId: "G-PCR6QBJZJJ"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Login form
+// Form submit
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const msg = document.getElementById("login-message");
 
-
-  // Login user with email and password 
+  msg.textContent = "";
+  
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
 
-    showSplash(`Hello ${user.displayName || email.split("@")[0]}!`, () => {
-      if (email.includes("admin")) {
-        window.location.href = "../admin.html";
-      } else {
-        window.location.href = "../citizen.html";
-      }
+    // Show splash with welcome
+    showSplash(`Welcome back, ${user.displayName || "User"}!`, () => {
+      // Redirect after splash
+      window.location.href = "../dashboard/dashboard.html"; // change to your dashboard/home page
     });
 
   } catch (err) {
-    msg.textContent = "Login failed: " + err.message;
+    msg.textContent = err.message;
     msg.style.color = "red";
   }
 });
-
-document.getElementById("year").textContent = new Date().getFullYear();
-
-

@@ -5,7 +5,6 @@
   padding: 0;
 }
 
-/* Body */
 body {
   font-family: 'Inter', sans-serif;
   background: linear-gradient(135deg, #2563eb, #10b981);
@@ -72,8 +71,8 @@ body {
   color: #94a3b8;
 }
 
-/* Login heading */
-.login-container h2 {
+/* Register heading */
+.register-container h1 {
   font-size: 22px;
   margin-bottom: 20px;
   color: #111827;
@@ -81,7 +80,7 @@ body {
 }
 
 /* Inputs */
-.login-container input {
+.register-container input {
   width: 100%;
   padding: 12px 14px;
   margin-bottom: 12px;
@@ -90,14 +89,14 @@ body {
   font-size: 14px;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
-.login-container input:focus {
+.register-container input:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
   outline: none;
 }
 
 /* Buttons */
-.login-container button {
+.register-container button {
   width: 100%;
   padding: 12px;
   border: none;
@@ -108,29 +107,29 @@ body {
   cursor: pointer;
   transition: background 0.3s, transform 0.2s;
 }
-.login-container button:hover {
+.register-container button:hover {
   background: #1d4ed8;
   transform: translateY(-2px);
 }
 
 /* Messages */
-#login-message {
+#register-message {
   margin-top: 12px;
   font-size: 14px;
   color: red;
 }
 
 /* Links */
-.login-container p {
+.register-container p {
   margin-top: 12px;
   font-size: 14px;
 }
-.login-container a {
+.register-container a {
   color: #2563eb;
   text-decoration: none;
   font-weight: 500;
 }
-.login-container a:hover {
+.register-container a:hover {
   text-decoration: underline;
 }
 
@@ -141,7 +140,7 @@ footer {
   color: #6b7280;
 }
 
-/* Splash */
+/* Splash (optional) */
 #splash {
   position: fixed;
   inset: 0;

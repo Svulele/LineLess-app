@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp
+  getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc,doc 
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -21,6 +21,11 @@ const auth = getAuth(app);
 let services = [];
 let selectedServiceId = null;
 let myTicket = null;
+
+const savedTicket = sessionStorage.getItem("myTicket");
+if (savedTicket) {
+  myTicket = JSON.parse(savedTicket);
+}
 
 function $(sel){ return document.querySelector(sel); }
 function serviceById(id){ return services.find(s => s.id === id); }
@@ -52,6 +57,8 @@ const debouncedRender = debounce(() => {
   renderDetails();
   renderMyTicket();
 });
+
+
 
 // --- Listen to all services ---
 function listenToServices() {
@@ -134,8 +141,29 @@ async function joinQueueFirestore(svc, idNumber){
     idNumber: idNumber 
   };
   $("#queue-status").textContent = `You have joined the queue as ${newTicketNumber}!`;
+  // Save ticket in sessionStorage
+sessionStorage.setItem("myTicket", JSON.stringify(myTicket));
+
   renderMyTicket();
 }
+  async function leaveQueue() {
+    if (!myTicket) return;
+    const queueRef = collection(db, "services", myTicket.serviceId, "queue");
+    try {
+      await deleteDoc(doc(queueRef, myTicket.ticketId));
+      myTicket = null;
+      $("#queue-status").textContent = "You left the queue.";
+      renderMyTicket();
+    } catch (err) {
+      alert("Error leaving queue: " + err.message);
+    }
+    sessionStorage.removeItem("myTicket");
+
+  }
+
+
+
+
 
 // --- Render service list ---
 function renderServiceList(){
@@ -216,6 +244,12 @@ function renderMyTicket(){
     }).join("")}
   </div>
 `;
+const leaveBtn = document.createElement("button");
+leaveBtn.className = "btn secondary";
+leaveBtn.textContent = "Leave Queue";
+leaveBtn.addEventListener("click", leaveQueue);
+wrap.appendChild(leaveBtn);
+
 highlightNextTicket();
 }
 

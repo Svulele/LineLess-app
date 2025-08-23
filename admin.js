@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc,  serverTimestamp, getDoc, getDocs, setDoc, addDoc
+  getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc,  serverTimestamp, getDoc, getDocs, setDoc, addDoc, updateDoc
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -31,6 +31,7 @@ async function renderAdminQueue() {
   queueArray.sort((a, b) => a.createdAt?.toMillis() - b.createdAt?.toMillis());
 
   const queueList = document.getElementById("admin-queue-list");
+  
   if (!queueList) return;
   queueList.innerHTML = "";
   
@@ -64,16 +65,14 @@ li.querySelector(".serve-btn").addEventListener("click", async () => {
   renderAdminQueue();
   renderHistory();
 });
-
-async function toggleServiceOpen(serviceId, isOpen) {
-  const serviceRef = doc(db, "services", serviceId);
-  await setDoc(serviceRef, { open: isOpen }, { merge: true });
-}
-
 li.querySelector(".remove-btn").addEventListener("click", async () => {
   await deleteDoc(doc(db, "queue", ticket.docId));
   renderAdminQueue();
 });
+async function toggleServiceOpen(serviceId, isOpen) {
+  const serviceRef = doc(db, "services", serviceId);
+  await setDoc(serviceRef, { open: isOpen }, { merge: true });
+}
 
 queueList.appendChild(li);
 });
@@ -95,12 +94,13 @@ renderAdminQueue();
 
 
 const serviceList = document.getElementById("admin-service-list");
-const detailsContent = document.getElementById("admin-details-content");
 const detailsTitle = document.getElementById("admin-details-title");
+const detailsContent = document.getElementById("admin-details-content");
+
 // Logout
 document.getElementById("logout-btn").addEventListener("click", async () => {
   await signOut(auth);
-  window.location.href = "./login/login.html";
+  window.location.href = "/login/login.html";
 });
 
 let activeService = null;
@@ -136,8 +136,6 @@ async function loadServices() {
 // Load queue for a service
 function loadQueue(service) {
   activeService = service;
-  const detailsTitle = document.getElementById("admin-details-title");
-  const detailsContent = document.getElementById("admin-details-content");
   detailsTitle.textContent = `Manage Queue – ${service}`;
   detailsContent.innerHTML = '<p class="muted">Loading queue...</p>';
 
@@ -150,19 +148,25 @@ function loadQueue(service) {
       detailsContent.innerHTML = '<p>No one in queue.</p>';
       return;
     }
-    let html ='<ul class="queue-list">';
+    let html =`
+    <div class="queue-header">
+      <strong>${activeService}</strong>
+      <button class="btn small toggle-btn" data-service="${activeService}">
+        Toggle Open/Closed
+      </button>
+    </div><ul class="queue-list">`;
     
     const queueArray = [];
     snapshot.forEach((docSnap) => {
       const ticket = docSnap.data();
-      const masked = ticket.idHash ? "****" + ticket.idHash.slice(-4) : "N/A";
+      const masked = ticket.idNumber ? "****" + ticket.idNumber.slice(-4) : "N/A";
       queueArray.push({ docId: docSnap.id, ...ticket, masked });
     });
 
       queueArray.forEach((ticket, idx) => {
       html += `
         <li>
-         <strong>${ticket.name || "Unnamed"}</strong> – ${ticket.ticketNumber || "N/A"} - ID: ${ticket.idNumber || ticket.masked}
+         <strong>${ticket.name || "Unnamed"}</strong> – ${ticket.ticketNumber || "N/A"} - ID: ${ ticket.masked}
          <div style="margin-top:6px; display:flex; gap:8px;">
          ${idx === 0 ? `<button class="btn serve-btn" data-id="${ticket.docId}">Serve Next</button>` : ""}
          <button class="btn secondary remove-btn" data-id="${ticket.docId}">Remove</button>
@@ -177,34 +181,56 @@ function loadQueue(service) {
   });
 }
 
-// Serve / Remove
+
+
+// Serve / Remove / Toggle
 detailsContent.addEventListener("click", async (e) => {
   if (e.target.classList.contains("serve-btn")) {
     const id = e.target.dataset.id;
-
     try {
       const ticketRef = doc(db, `services/${activeService}/queue`, id);
       const ticketSnap = await getDoc(ticketRef);
-     
-        // move to histroy 
-        await setDoc(doc(db, `services/${activeService}/history`, id), {
-          ...ticketSnap.data(),
+      await setDoc(doc(db, `services/${activeService}/history`, id), {
+        ...ticketSnap.data(),
         servedAt: serverTimestamp(),
-        });
+      });
+      await deleteDoc(ticketRef);
+    } catch (err) {
+      alert("Error serving: " + err.message);
+    }
+  }
 
-        await deleteDoc(ticketRef);
-       } catch (err) {
-        alert("Error serving: " + err.message);
-      }
-}
-
- if (e.target.classList.contains("remove-btn")) {
+  if (e.target.classList.contains("remove-btn")) {
     const id = e.target.dataset.id;
-
     try {
       await deleteDoc(doc(db, `services/${activeService}/queue`, id));
     } catch (err) {
       alert("Error removing: " + err.message);
+    }
+  }
+
+  // Toggle service open/closed
+  if (e.target.classList.contains("toggle-btn")) {
+    const service = e.target.dataset.service;
+    const toggleBtn = e.target; // reference button
+    try {
+      toggleBtn.disabled = true; // prevent double click
+      const svcRef = doc(db, "services", service);
+      const svcSnap = await getDoc(svcRef);
+      if (!svcSnap.exists()) {
+        alert("Service not found");
+        toggleBtn.disabled = false;
+        return;
+      }
+      const isOpen = svcSnap.data().open !== false;
+      await updateDoc(svcRef, { open: !isOpen });
+
+      // Update button text immediately
+      toggleBtn.textContent = !isOpen ? "Service Closed" : "Service Open";
+    } catch (err) {
+      alert("Error toggling service: " + err.message);
+    } finally {
+      toggleBtn.disabled = false;
     }
   }
 });

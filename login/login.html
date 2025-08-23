@@ -1,48 +1,65 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LineLess Login</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LineLess – Login</title>
 
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="/loading/loading.css" />
+
+  <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
 </head>
-
 <body>
-  <div class="container auth-container">
-    <header>
-      <div class="logo">
-        <div class="logo-box">
-          <div class="logo-glyph">
-            <div class="bar a"></div>
-            <div class="bar b"></div>
-          </div>
-        </div>
-        <div>
-          <h1>LineLess</h1>
-          <div class="tag">Know when it’s your turn.</div>
+  <div class="auth-container">
+
+    <!-- Logo & Tag -->
+    <div class="logo">
+      <div class="logo-box">
+        <div class="logo-glyph">
+          <div class="bar a"></div>
+          <div class="bar b"></div>
         </div>
       </div>
-    </header>
+      <div>
+        <h1>LineLess</h1>
+        <div class="tag">Know when it’s your turn.</div>
+      </div>
+    </div>
 
-  <div class="container">
-    <h1>Login</h1>
+    <!-- Login Card -->
+    <div class="login-container">
+      <h1>Welcome Back</h1>
+      <br>
+      
 
-    <form id="login-form">
+      <form id="login-form">
+        <input type="email" id="email" placeholder="Email" required autocomplete="email" />
+        <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
+        <button type="submit">Login</button>
+      </form>
 
-    <input type="email" id="email" placeholder="Email" required autocomplete="email" />
-    <input type="password" id="password" placeholder="Password" required autocomplete="current-password" />
-    <button type="submit">Login</button>
+      <p id="login-message"></p>
+      <p>Don't have an account? <a href="../register/register.html">Register here</a></p>
+    </div>
 
-    </form>
-<p id="login-message"></p>
-    <p>Don't have an account? <a href="../Register/register.html">Register here</a></p>
-
+    <footer>
+      &copy; <span id="year"></span> LineLess. All rights reserved.
+    </footer>
   </div>
 
-<footer>
-  <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
-</footer>
+  <!-- Splash -->
+  <div id="splash">
+    <div class="loader"></div>
+  </div>
+
   <script type="module" src="login.js"></script>
+  <script>
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>

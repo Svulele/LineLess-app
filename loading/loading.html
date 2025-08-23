@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading...</title>
+  <link rel="stylesheet" href="loading.css">
+</head>
+<body>
+  <div id="splash"></div>
+
+  <script type="module">
+    import { showSplash } from "./splash.js";
+
+    // Get user info from sessionStorage
+    const name = sessionStorage.getItem("userName") || "User";
+    const isAdmin = sessionStorage.getItem("isAdmin") === "true";
+
+    const message = `Hello ${name}!`;
+
+    showSplash(message, () => {
+      if (isAdmin) {
+        window.location.href = "../admin.html";
+      } else {
+        window.location.href = "../citizen.html";
+      }
+    });
+  </script>
+</body>
+</html>
