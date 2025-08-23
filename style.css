@@ -430,3 +430,58 @@ footer {
 #splash .logo-glyph { width: 30px; height: 30px; }
 #splash .logo-glyph .bar.a { width: 12px; height: 22px; top: 4px; }
 #splash .logo-glyph .bar.b { width: 10px; height: 18px; left: 15px; top: 8px; }
+
+/* Ticket Search */
+.ticket-search {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.05);
+  transition: 0.15s;
+}
+
+.ticket-search:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+
+#ticket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+
+#ticket-list .ticket-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 14px;
+  transition: 0.15s;
+}
+
+#ticket-list .ticket-item:hover {
+  background: #f8fafc;
+}
+
+
+#ticket-list .ticket-item strong {
+  color: var(--primary);
+}
+
+#ticket-list .ticket-item span {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 4px;
+}

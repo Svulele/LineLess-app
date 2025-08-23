@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc,  serverTimestamp, getDoc, getDocs, setDoc, addDoc, updateDoc
+  getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc,  serverTimestamp, getDoc, getDocs, setDoc, addDoc, updateDoc, where
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -19,23 +19,24 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+
 async function renderAdminQueue() {
   const queueRef = collection(db, "queue");
   const querySnapshot = await getDocs(queueRef);
 
-  const queueArray = [];
+ tickets = [];
   querySnapshot.forEach((docSnap) => {
-    queueArray.push({ docId: docSnap.id, ...docSnap.data() });
+    tickets.push({ docId: docSnap.id, ...docSnap.data() });
   });
 
-  queueArray.sort((a, b) => a.createdAt?.toMillis() - b.createdAt?.toMillis());
+  tickets.sort((a, b) => a.createdAt?.toMillis() - b.createdAt?.toMillis());
 
-  const queueList = document.getElementById("admin-queue-list");
+  const queueList = document.getElementById("ticket-list");
   
   if (!queueList) return;
   queueList.innerHTML = "";
   
-  queueArray.forEach((ticket, idx) => {
+  tickets.forEach((ticket, idx) => {
     const li = document.createElement("li");
     li.classList.add("ticket-item");
 
@@ -43,7 +44,7 @@ async function renderAdminQueue() {
     <div class="ticket-card">
     <div class="ticket-header">
     <span class="ticket-name">${ticket.name}</span>
-    <span class="ticket-position">Position: ${idx + 1} of ${queueArray.length}</span>
+    <span class="ticket-position">Position: ${idx + 1} of ${tickets.length}</span>
   </div>
   <div class="ticket-actions">
     <button class="serve-btn" data-id="${ticket.docId}">Serve</button>
@@ -51,16 +52,14 @@ async function renderAdminQueue() {
   </div>
  
   <div class="stepper">
-    ${renderStepper(idx + 1, queueArray.length)}
+    ${renderStepper(idx + 1, tickets.length)}
   </div>
 </div>
 `;
 
 li.querySelector(".serve-btn").addEventListener("click", async () => {
   const historyRef = collection(db, "history");
-  await addDoc(historyRef, {
-    ...ticket,
-    servedAt: serverTimestamp() });
+  await addDoc(historyRef, { ...ticket, servedAt: serverTimestamp() });
   await deleteDoc(doc(db, "queue", ticket.docId));
   renderAdminQueue();
   renderHistory();
@@ -69,10 +68,7 @@ li.querySelector(".remove-btn").addEventListener("click", async () => {
   await deleteDoc(doc(db, "queue", ticket.docId));
   renderAdminQueue();
 });
-async function toggleServiceOpen(serviceId, isOpen) {
-  const serviceRef = doc(db, "services", serviceId);
-  await setDoc(serviceRef, { open: isOpen }, { merge: true });
-}
+
 
 queueList.appendChild(li);
 });
@@ -92,10 +88,58 @@ return `<div class="stepper-container">${steps}</div>`;
 
 renderAdminQueue();
 
+const searchInput = document.getElementById("searchInput");
+async function searchTickets(searchValue) {
+  ticketList.innerHTML = "Searching...";
 
-const serviceList = document.getElementById("admin-service-list");
-const detailsTitle = document.getElementById("admin-details-title");
+  try {
+    const ticketsRef = collection(db, "tickets");
+    // query by ticket ID (assuming you have a "ticketId" field in Firestore)
+    const q = query(ticketsRef, where("ticketId", "==", searchValue));
+    const querySnapshot = await getDocs(q);
+
+    ticketList.innerHTML = ""; // clear results
+
+    if (querySnapshot.empty) {
+      ticketList.innerHTML = "No tickets found.";
+    } else {
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const ticketDiv = document.createElement("div");
+        ticketDiv.textContent = `Ticket ${data.ticketId} - ${data.service}`;
+        ticketList.appendChild(ticketDiv);
+      });
+    }
+  } catch (error) {
+    console.error("Error searching tickets:", error);
+    ticketList.innerHTML = "Error while searching.";
+  }
+}
+
+// Listen to typing (Enter key)
+searchInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    const value = searchInput.value.trim();
+    if (value) {
+      searchTickets(value);
+    }
+  }
+});
+
+const ticketList = document.getElementById("ticket-list");
+onSnapshot(collection(db, "tickets"), (snapshot) => {
+  ticketList.innerHTML = ""; // clear
+  snapshot.forEach((doc) => {
+    const ticket = doc.data();
+    const div = document.createElement("div");
+    div.textContent = `${ticket.code} - ${ticket.status}`;
+    div.classList.add("ticket-item");
+    ticketList.appendChild(div);
+  });
+});
 const detailsContent = document.getElementById("admin-details-content");
+const detailsTitle = document.getElementById("admin-details-title"); 
+const serviceList = document.getElementById("admin-service-list");
 
 // Logout
 document.getElementById("logout-btn").addEventListener("click", async () => {
@@ -103,6 +147,7 @@ document.getElementById("logout-btn").addEventListener("click", async () => {
   window.location.href = "/login/login.html";
 });
 
+let tickets = [];
 let activeService = null;
 let unsubQueue = null;
 
@@ -133,6 +178,22 @@ async function loadServices() {
     serviceList.appendChild(btn);
   });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("ticket-search");
+
+  
+  if(searchInput) {
+    searchInput.addEventListener("input", e => renderTickets(e.target.value));
+    searchInput.addEventListener("keydown", e => {
+     
+      if (e.key === "Enter") {
+        e.preventDefault();
+        renderTickets(searchInput.value);
+      }
+    });
+  }
+});
 // Load queue for a service
 function loadQueue(service) {
   activeService = service;
@@ -144,44 +205,92 @@ function loadQueue(service) {
   const q = query(collection(db, `services/${service}/queue`), orderBy("createdAt"));
   
   unsubQueue = onSnapshot(q, (snapshot) => {
+    tickets = [];
     if (snapshot.empty) {
       detailsContent.innerHTML = '<p>No one in queue.</p>';
-      return;
-    }
-    let html =`
+    } else {
+      snapshot.forEach((docSnap) => {
+        const ticket = docSnap.data();
+        const masked = ticket.idNumber ? "****" + ticket.idNumber.slice(-4) : "N/A";
+        tickets.push({ docId: docSnap.id, ...ticket, masked });
+    });
+  }
+  renderQueueHTML();
+  });
+}
+function renderTickets(filter = "") {
+  const wrap = document.getElementById("ticket-list");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+
+
+  if (!tickets || tickets.length === 0) {
+    wrap.innerHTML = '<p class="muted">No tickets found.</p>'; 
+   return;
+}
+
+const search = filter.toLowerCase();
+const filteredTickets = tickets.filter(t =>
+  (t.idNumber || "").toLowerCase().includes(search) ||
+  (t.ticketNumber || "").toLowerCase().includes(search) ||
+  (t.name || "").toLowerCase().includes(search)
+);
+
+if (filteredTickets.length === 0) {
+  wrap.innerHTML = "<li>No matches.</li>";
+  return;
+}
+
+filteredTickets.forEach((t, idx) => {
+  const div = document.createElement("div");
+  div.className = "ticket-item";
+  div.innerHTML = `
+    <strong>Ticket:</strong> ${t.ticketNumber || "N/A"} <br>
+    <strong>ID:</strong> ${t.idNumber || "N/A"} <br>
+    <strong>Name:</strong> ${t.name || "Unnamed"} <br>
+    <span>Position: ${idx + 1} of ${filteredTickets.length}</span>
+  `;
+  wrap.appendChild(div);
+});
+}
+
+async function renderQueueHTML() {
+  if (!activeService) return;
+
+  const serviceRef = doc(db, "services", activeService);
+  const svcSnap = await getDoc(serviceRef);
+  const isOpen = svcSnap.exists() ? svcSnap.data().open !== false : true;
+
+  let html = `
     <div class="queue-header">
       <strong>${activeService}</strong>
       <button class="btn small toggle-btn" data-service="${activeService}">
-        Toggle Open/Closed
+        ${isOpen ? "Close Service" : "Open Service"}
       </button>
-    </div><ul class="queue-list">`;
-    
-    const queueArray = [];
-    snapshot.forEach((docSnap) => {
-      const ticket = docSnap.data();
-      const masked = ticket.idNumber ? "****" + ticket.idNumber.slice(-4) : "N/A";
-      queueArray.push({ docId: docSnap.id, ...ticket, masked });
-    });
+    </div>
+    <ul class="queue-list">
+  `;
 
-      queueArray.forEach((ticket, idx) => {
+  if (tickets.length === 0) {
+    html += `<li><em>No tickets in queue.</em></li>`;
+  } else {
+    tickets.forEach((ticket, idx) => {
       html += `
         <li>
-         <strong>${ticket.name || "Unnamed"}</strong> – ${ticket.ticketNumber || "N/A"} - ID: ${ ticket.masked}
-         <div style="margin-top:6px; display:flex; gap:8px;">
-         ${idx === 0 ? `<button class="btn serve-btn" data-id="${ticket.docId}">Serve Next</button>` : ""}
-         <button class="btn secondary remove-btn" data-id="${ticket.docId}">Remove</button>
-         <span style="margin-left:8px;">Position: ${idx + 1} of ${queueArray.length}</span>
-         </div>
+          <strong>${ticket.name || "Unnamed"}</strong> – ${ticket.ticketNumber || "N/A"} - ID: ${ticket.masked}
+          <div style="margin-top:6px; display:flex; gap:8px;">
+            ${isOpen && idx === 0 ? `<button class="btn serve-btn" data-id="${ticket.docId}">Serve Next</button>` : ""}
+            ${isOpen ? `<button class="btn secondary remove-btn" data-id="${ticket.docId}">Remove</button>` : ""}
+            <span style="margin-left:8px;">Position: ${idx + 1} of ${tickets.length}</span>
+          </div>
         </li>
-        `;
+      `;
     });
+  }
 
-    html += "</ul>";
-    detailsContent.innerHTML = html;
-  });
+  html += "</ul>";
+  detailsContent.innerHTML = html;
 }
-
-
 
 // Serve / Remove / Toggle
 detailsContent.addEventListener("click", async (e) => {

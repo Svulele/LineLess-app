@@ -1,8 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc,doc 
+  getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc 
 } from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { sha256 } from "js-sha256"; 
 
 // --- Firebase config ---
 const firebaseConfig = { 
@@ -22,7 +23,74 @@ let services = [];
 let selectedServiceId = null;
 let myTicket = null;
 
+
+
+
+const ticketNumberEl = document.getElementById("my-ticket-number");
+const etaEl = document.getElementById("my-ticket-eta");
+const inlineMsgEl = document.getElementById("inline-message");
 const savedTicket = sessionStorage.getItem("myTicket");
+
+// Average service time in minutes (adjust to your system)
+const AVG_SERVICE_TIME = 5;
+
+// Format ETA in HH:MM
+function formatETA(minutes) {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() + minutes);
+  return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Animate number change
+function animateNumber(element, start, end, duration = 500) {
+  let startTime = null;
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const progress = Math.min((timestamp - startTime) / duration, 1);
+    const value = Math.floor(start + (end - start) * progress);
+    element.textContent = value;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Show styled inline message
+function showInlineMessage(msg, type = "info") {
+  inlineMsgEl.textContent = msg;
+  inlineMsgEl.className = `message ${type}`;
+  setTimeout(() => { inlineMsgEl.textContent = ""; }, 5000);
+}
+
+// Show “You’re next!” popup
+function showNextPopup() {
+  const popup = document.createElement("div");
+  popup.className = "next-popup";
+  popup.textContent = "You're next!";
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 4000);
+}
+
+function initCitizenDashboard(user) {
+  const ticketRef = doc(db, "tickets", user.uid);
+  onSnapshot(ticketRef, (docSnap) => {
+    if (!docSnap.exists()) {
+      showInlineMessage("No ticket found.", "error");
+      return;
+    }
+
+    const data = docSnap.data();
+    const { position, ticketNumber } = data;
+
+    animateNumber(ticketNumberEl, parseInt(ticketNumberEl.textContent) || 0, ticketNumber);
+    const etaMinutes = position * AVG_SERVICE_TIME;
+    etaEl.textContent = formatETA(etaMinutes);
+
+    if (position === 1) showNextPopup();
+  }, (error) => {
+    showInlineMessage(`Error fetching ticket: ${error.message}`, "error");
+  });
+}
+
 if (savedTicket) {
   myTicket = JSON.parse(savedTicket);
 }
@@ -31,10 +99,20 @@ function $(sel){ return document.querySelector(sel); }
 function serviceById(id){ return services.find(s => s.id === id); }
 
 async function hashID(id) {
-  //const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id));
-  //return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
-  return id;
+  return sha256(id);
 }
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    if(savedTicket) myTicket = JSON.parse(savedTicket);
+    renderMyTicket();
+    listenToServices();
+  } else {
+    window.location.href = "/login/login.html";
+  }
+});
+
+
 
 // --- ETA badge helper ---
 function etaBadge(queueLength, avgMins = 5){
@@ -58,79 +136,63 @@ const debouncedRender = debounce(() => {
   renderMyTicket();
 });
 
-
-
 // --- Listen to all services ---
 function listenToServices() {
   const servicesRef = collection(db, "services");
 
   onSnapshot(servicesRef, snapshot => {
-   const  newServices = [];
+    const newServices = [];
 
     snapshot.forEach(docSnap => {
       const data = docSnap.data();
-
-
-      // Fill defaults if missing
-      const svcData = {
+      newServices.push({
         id: docSnap.id,
         name: data.name || "Unnamed Service",
         open: data.open !== undefined ? data.open : true,
-        avgMinsPerPerson: data.avgMinsPerPerson || 5,
+        avgMinsPerPerson: data.avgMinsPerPerson || AVG_SERVICE_TIME,
         queue: []
-      };
-      // Listen to queue of each service
-      const qRef = query(collection(db, "services", docSnap.id, "queue"), orderBy("createdAt"));
-      onSnapshot(qRef, qSnap => {
-
-
-        svcData.queue = [];
-        qSnap.forEach(qd => {
-          const qData = qd.data();
-
-          // human readable ticket number
-          const ticketNum = qData.ticketNumber || `#${qSnap.docs.indexOf(qd) + 1}`;
-          const idNum     = qData.idNumber   || "Unknown";
-
-          svcData.queue.push({
-            ticketNumber: ticketNum,
-            idNumber: idNum,
-            id: qd.id,
-            createdAt: qData.createdAt || null
-          });
-        });
-
-        svcData.queue.sort((a, b) => {
-          const aTime = a.createdAt ? a.createdAt.seconds : 0;
-          const bTime = b.createdAt ? b.createdAt.seconds : 0;
-          return aTime - bTime;
-        });
-
-        debouncedRender();
       });
-
-      newServices.push(svcData);
     });
+
     services = newServices;
     debouncedRender();
   });
 }
+  
+function listenToServiceQueue(serviceId){
+  const svc = serviceById(serviceId);
+  if(!svc) return;
+
+  const qRef = query(collection(db, "services", serviceId, "queue"), orderBy("createdAt"));
+  onSnapshot(qRef, qSnap => {
+    svc.queue = [];
+    qSnap.forEach(qd => {
+      const qData = qd.data();
+      svc.queue.push({
+        ticketNumber: qData.ticketNumber || `#${qSnap.docs.indexOf(qd)+1}`,
+        idNumber: qData.idNumber || "Unknown",
+        id: qd.id,
+        createdAt: qData.createdAt || null
+      });
+    });
+    svc.queue.sort((a,b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+    debouncedRender();
+  });
+}
+
 
 // --- Join queue ---
-async function joinQueueFirestore(svc, idNumber){
+async function joinQueueFirestore(svc, hashedID, readableName) {
+  try{
   const queueRef = collection(db, "services", svc.id, "queue");
-
-  // Count existing queue
   const docs = await getDocs(queueRef);
   const queueLen = docs.size;
-
-  // Generate ticket ID to be readable
   const newTicketNumber = `${svc.name.slice(0,2).toUpperCase()}${queueLen+1}`;
 
-  // Add to Firestore
   const docRef = await addDoc(queueRef, { 
     ticketNumber: newTicketNumber,
-    idNumber: idNumber,
+    idNumber: readableName,
+    hashedID: hashedID,
     createdAt: serverTimestamp(), 
   });
 
@@ -138,41 +200,39 @@ async function joinQueueFirestore(svc, idNumber){
     serviceId: svc.id, 
     ticketId: docRef.id, 
     ticketNumber: newTicketNumber,
-    idNumber: idNumber 
+    idNumber: readableName
   };
+
   $("#queue-status").textContent = `You have joined the queue as ${newTicketNumber}!`;
-  // Save ticket in sessionStorage
-sessionStorage.setItem("myTicket", JSON.stringify(myTicket));
-
+  sessionStorage.setItem("myTicket", JSON.stringify(myTicket));
   renderMyTicket();
+} catch (err) {
+  showInlineMessage(`Error joining queue: ${err.message}`, "error");
 }
-  async function leaveQueue() {
-    if (!myTicket) return;
-    const queueRef = collection(db, "services", myTicket.serviceId, "queue");
-    try {
-      await deleteDoc(doc(queueRef, myTicket.ticketId));
-      myTicket = null;
-      $("#queue-status").textContent = "You left the queue.";
-      renderMyTicket();
-    } catch (err) {
-      alert("Error leaving queue: " + err.message);
-    }
+}
+
+async function leaveQueue() {
+  if (!myTicket) return;
+  try {
+  const queueRef = collection(db, "services", myTicket.serviceId, "queue");
+  
+    await deleteDoc(doc(queueRef, myTicket.ticketId));
+    myTicket = null;
+    $("#queue-status").textContent = "You left the queue.";
     sessionStorage.removeItem("myTicket");
-
+    renderMyTicket();
+  } catch (err) {
+    showInlineMessage(`Error leaving queue: ${err.message}`, "error");
   }
-
-
-
-
+}
 
 // --- Render service list ---
 function renderServiceList(){
   const wrap = $("#service-list");
   wrap.innerHTML = "";
-
   services.forEach(s => {
     const qlen = (s.queue || []).length;
-    const avgMins = s.avgMinsPerPerson || 5;
+    const avgMins = s.avgMinsPerPerson || AVG_SERVICE_TIME;
     
     const btn = document.createElement("button");
     btn.className = "item";
@@ -180,9 +240,9 @@ function renderServiceList(){
       <div class="row space">
         <div>${s.name}${etaBadge(qlen, avgMins)}</div>
       </div>
-      <div class="meta">${s.open ? "Open" : "Closed"} • ${qlen} in queue</div>
+      <div class="meta">${s.open ? " Service Open" : "Service Closed"} • ${qlen} in queue</div>
     `;
-    btn.onclick = () => { selectedServiceId = s.id; renderDetails(); };
+    btn.onclick = () => { selectedServiceId = s.id; renderDetails(); listenToServiceQueue(s.id);};
     wrap.appendChild(btn);
   });
 }
@@ -201,10 +261,13 @@ function renderDetails(){
     form.style.display = "none";
   }
 
-  form.onsubmit = e => {
+  form.onsubmit =  async e => {
     e.preventDefault();
     const idNumber = $("#idCard").value.trim();
-    if(idNumber && svc) joinQueueFirestore(svc, idNumber);
+    if(idNumber && svc) {
+      const hashedID = await hashID(idNumber);
+      joinQueueFirestore(svc,hashedID, idNumber);
+  }
     $("#idCard").value = "";
   };
 }
@@ -213,7 +276,9 @@ function renderDetails(){
 function renderMyTicket(){
   const wrap = $("#my-ticket");
   if(!myTicket){ 
-    wrap.textContent = "You haven’t joined a queue yet."; 
+    wrap.textContent = "You haven’t joined a queue yet.";
+    ticketNumberEl.textContent = "0";
+    etaEl.textContent = "--:--"; 
     return; 
   }
 
@@ -226,39 +291,40 @@ function renderMyTicket(){
   const queue = (svc.queue || []).filter(t => t.id);
   const position = queue.findIndex(p => p.id === myTicket.ticketId) + 1;
   const total = queue.length;
+  const etaMinutes = position * (svc.avgMinsPerPerson || AVG_SERVICE_TIME);
+
+  ticketNumberEl.textContent = myTicket.ticketNumber;
+  etaEl.textContent = formatETA(etaMinutes);
 
   wrap.innerHTML = `
-  <div class="ticket">
-    <strong>Your Ticket:</strong> ${myTicket.ticketNumber} <br>
-    <strong>ID Number:</strong> ${myTicket.idNumber} <br>
-    <strong>Service:</strong> ${svc.name} <br>
-    <strong>Position:</strong> ${position > 0 ? position : "Waiting…"} of ${total} 
-  </div>
-  <div class="steps">
-    ${queue.map((t,i) => {
-      const cls = i+1 < position ? "done" : i+1 === position ? "active" : "";
-      return `<div class="step ${cls}">
-        <div class="dot"></div>
-        <div class="label">#${t.ticketNumber}</div>
-      </div>`;
-    }).join("")}
-  </div>
-`;
-const leaveBtn = document.createElement("button");
-leaveBtn.className = "btn secondary";
-leaveBtn.textContent = "Leave Queue";
-leaveBtn.addEventListener("click", leaveQueue);
-wrap.appendChild(leaveBtn);
+    <div class="ticket">
+      <strong>Your Ticket:</strong> ${myTicket.ticketNumber} <br>
+      <strong>ID Number:</strong> ${myTicket.idNumber} <br>
+      <strong>Service:</strong> ${svc.name} <br>
+      <strong>Position:</strong> ${position > 0 ? position : "Waiting…"} of ${total} 
+    </div>
+    <div class="steps">
+      ${queue.map((t,i) => {
+        const cls = i+1 < position ? "done" : i+1 === position ? "active" : "";
+        return `<div class="step ${cls}">
+          <div class="dot"></div>
+          <div class="label">#${t.ticketNumber}</div>
+        </div>`;
+      }).join("")}
+    </div>
+  `;
+  const leaveBtn = document.createElement("button");
+  leaveBtn.className = "btn secondary";
+  leaveBtn.textContent = "Leave Queue";
+  leaveBtn.addEventListener("click", leaveQueue);
+  wrap.appendChild(leaveBtn);
 
-highlightNextTicket();
+  highlightNextTicket();
 }
 
-function highlightNextTicket() {
+function highlightNextTicket(position) {
   const wrap = $("#my-ticket");
   if(!myTicket) return;
-  const svc = serviceById(myTicket.serviceId);
-  const queue = (svc.queue || []);
-  const position = queue.findIndex(t => t.id === myTicket.ticketId) + 1;
   if(position === 1) {
     wrap.classList.add("flash"); 
     setTimeout(() => wrap.classList.remove("flash"), 800);
@@ -271,5 +337,3 @@ $("#logout-btn").addEventListener("click", async () => {
   window.location.href = "/login/login.html";
 });
 
-// --- Init ---
-listenToServices();
