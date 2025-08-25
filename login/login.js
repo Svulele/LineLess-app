@@ -17,6 +17,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const  db = getFirestore(app);
+window.addEventListener("load", () => {
+  document.body.classList.add("loaded");
+});
+
+function smoothRedirect(url) {
+
+  setTimeout(() => {
+    window.location.assign(url);
+  }, 600);
+}
 
 async function redirectByRole(user) {
   const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -32,9 +42,9 @@ async function redirectByRole(user) {
   sessionStorage.setItem("isAdmin", role === "admin");
 
   if (role === "admin") {
-    window.location.href = "../admin.html";
+    smoothRedirect( "../admin.html");
   } else {
-    window.location.href = "../citizen.html";
+    smoothRedirect ("../citizen.html");
   }
 }
 document.getElementById("login-form").addEventListener("submit", async (e) => {

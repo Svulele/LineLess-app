@@ -19,6 +19,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+window.addEventListener("load", () => {
+  document.body.classList.add("loaded");
+});
+
+
 let services = [];
 let selectedServiceId = null;
 let myTicket = null;

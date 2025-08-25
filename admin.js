@@ -18,6 +18,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+window.addEventListener("load", () => {
+  document.body.classList.add("loaded");
+});
+
 function showAdminMessage(message, type = "error") {
   const msgBox = document.getElementById("admin-message");
   if (!msgBox) return;
@@ -25,6 +30,7 @@ function showAdminMessage(message, type = "error") {
   msgBox.textContent = message;
   msgBox.className = `admin-message ${type}`;
   msgBox.classList.remove("hidden");
+  
 
   // Auto-hide after 4s
   setTimeout(() => {

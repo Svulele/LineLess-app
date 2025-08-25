@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LineLess – Contact</title>
+  <link rel="stylesheet" href="/login/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
+</head>
+<body>
+  <div class="container auth-container">
+    <header>
+      <div class="logo">
+        <div class="logo-box">
+          <div class="logo-glyph">
+            <div class="bar a"></div>
+            <div class="bar b"></div>
+          </div>
+        </div>
+        <div>
+          <h1>LineLess</h1>
+          <div class="tag">Know when it’s your turn.</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="register-container contact-container">
+      <h1>Contact Support</h1>
+      <form id="contact-form">
+        <input type="text" id="contact-name" placeholder="Your Name" required autocomplete="name" />
+        <input type="email" id="contact-email" placeholder="Your Email" required autocomplete="email" />
+        <textarea id="contact-message" placeholder="Your Message" required rows="5"></textarea>
+        <button type="submit" class="login-btn">Send Message</button>
+      </form>
+      <p id="contact-feedback"></p>
+    </div>
+
+    <footer>
+      <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="./contact.js"></script>
+</body>
+</html>
