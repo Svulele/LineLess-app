@@ -512,3 +512,19 @@ footer {
 .admin-message.hidden {
   display: none;
 }
+
+.contact-btn {
+  padding: 12px 24px;
+  background: #edf0ef;
+  color: rgb(10, 6, 6);
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
