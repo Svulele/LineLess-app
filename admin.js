@@ -18,6 +18,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+function showAdminMessage(message, type = "error") {
+  const msgBox = document.getElementById("admin-message");
+  if (!msgBox) return;
+
+  msgBox.textContent = message;
+  msgBox.className = `admin-message ${type}`;
+  msgBox.classList.remove("hidden");
+
+  // Auto-hide after 4s
+  setTimeout(() => {
+    msgBox.classList.add("hidden");
+  }, 4000);
+}
+
 
 
 async function renderAdminQueue() {
@@ -305,7 +319,7 @@ detailsContent.addEventListener("click", async (e) => {
       });
       await deleteDoc(ticketRef);
     } catch (err) {
-      alert("Error serving: " + err.message);
+      showAdminMessage("Error serving: " + err.message, "error");
     }
   }
 
@@ -314,7 +328,7 @@ detailsContent.addEventListener("click", async (e) => {
     try {
       await deleteDoc(doc(db, `services/${activeService}/queue`, id));
     } catch (err) {
-      alert("Error removing: " + err.message);
+      showAdminMessage("Error removing: " + err.message, "error");
     }
   }
 
@@ -327,7 +341,7 @@ detailsContent.addEventListener("click", async (e) => {
       const svcRef = doc(db, "services", service);
       const svcSnap = await getDoc(svcRef);
       if (!svcSnap.exists()) {
-        alert("Service not found");
+        showAdminMessage("Service not found", "error");
         toggleBtn.disabled = false;
         return;
       }
@@ -337,7 +351,7 @@ detailsContent.addEventListener("click", async (e) => {
       // Update button text immediately
       toggleBtn.textContent = !isOpen ? "Service Closed" : "Service Open";
     } catch (err) {
-      alert("Error toggling service: " + err.message);
+      showAdminMessage("Error toggling service: " + err.message, "error");
     } finally {
       toggleBtn.disabled = false;
     }

@@ -1,4 +1,13 @@
-export function showSplash(title = "Loading...", { tagline = "", duration = 2000, onComplete } = {}) {
+export function showSplash(title = "Loading...", options = {}) {
+  let onComplete;
+  if (typeof options === "function") {
+    onComplete = options;
+    options = {};
+  } else {
+    onComplete = options.onComplete;
+  }
+
+  const { tagline = "", duration = 2000 } = options;
   let splash = document.getElementById("splash");
 
   if (!splash) {
@@ -23,11 +32,19 @@ export function showSplash(title = "Loading...", { tagline = "", duration = 2000
 
   splash.classList.add("show");
 
+  // Remove splash after duration
   setTimeout(() => {
     splash.classList.add("fade-out");
-    splash.addEventListener("animationend", () => {
+
+    // Guarantee callback runs even if animation fails
+    const safeCallback = () => {
       splash.remove();
       if (onComplete) onComplete();
-    }, { once: true });
+    };
+
+    splash.addEventListener("animationend", safeCallback, { once: true });
+
+    // Fallback if animation never fires
+    setTimeout(safeCallback, 1000);
   }, duration);
 }

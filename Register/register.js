@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { showSplash } from "../loading/splash.js";
 
 const firebaseConfig = { 
@@ -43,19 +43,22 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
   try {
     const userCred = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
+
     await updateProfile(user, { displayName: name });
+
     const idHash = await hashID(idCard);
 
     await setDoc(doc(db, "users", user.uid), {
       name,
       email,
-      idNumber: idHash, // safer to store hash instead of raw ID
-      createdAt: serverTimestamp(),
+      idHash,            
+      createdAt: new Date(),
       role: "citizen"
     });
 
+    
     showSplash(`Welcome ${name}!`, () => {
-      window.location.href = "../login.html";
+      window.location.href = "../login/login.html";
     });
 
   } catch(err) {

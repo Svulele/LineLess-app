@@ -102,7 +102,7 @@ async function hashID(id) {
   return sha256(id);
 }
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if (user) {
     if(savedTicket) myTicket = JSON.parse(savedTicket);
     renderMyTicket();

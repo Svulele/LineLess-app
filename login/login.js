@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
+import { getFirestore, doc, getDoc } from "firebase/firestore"
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { showSplash } from "../loading/splash.js"; // Make sure this path is correct
+import { showSplash } from "../loading/splash.js"; 
 
 // Firebase config
 const firebaseConfig = {
@@ -15,8 +16,27 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const  db = getFirestore(app);
 
-// Form submit
+async function redirectByRole(user) {
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  if (!userDoc.exists()) {
+    console.warn("User document does not exist");
+   return;
+  }
+
+  const userdata = userDoc.data();
+  const role = userdata.role || "citizen";
+
+  sessionStorage.setItem("userName", userdata.name || user.email);
+  sessionStorage.setItem("isAdmin", role === "admin");
+
+  if (role === "admin") {
+    window.location.href = "../admin.html";
+  } else {
+    window.location.href = "../citizen.html";
+  }
+}
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -32,12 +52,14 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
     // Show splash with welcome
     showSplash(`Welcome back, ${user.displayName || "User"}!`, () => {
-      // Redirect after splash
-      window.location.href = "../dashboard/dashboard.html"; // change to your dashboard/home page
+      redirectByRole(user);
     });
 
   } catch (err) {
     msg.textContent = err.message;
     msg.style.color = "red";
   }
+});
+onAuthStateChanged(auth, (user) => {
+  if (user) redirectByRole(user);
 });
