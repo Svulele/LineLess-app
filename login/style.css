@@ -18,9 +18,9 @@ body {
 
 /* Container */
 .auth-container {
-  backdrop-filter: blur(10px);
-  -moz-backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  -moz-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   background: rgba(255,255,255,0.85);
   border-radius: 1rem;;
   padding: 2rem;
