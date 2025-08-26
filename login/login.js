@@ -17,21 +17,25 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const  db = getFirestore(app);
+
+// This smoothes the redirect
 window.addEventListener("load", () => {
   document.body.classList.add("loaded");
 });
 
 function smoothRedirect(url) {
-
   setTimeout(() => {
     window.location.assign(url);
   }, 600);
 }
 
 async function redirectByRole(user) {
-  const userDoc = await getDoc(doc(db, "users", user.uid));
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+
   if (!userDoc.exists()) {
     console.warn("User document does not exist");
+    smoothRedirect("../citizen.html");
    return;
   }
 
@@ -46,7 +50,12 @@ async function redirectByRole(user) {
   } else {
     smoothRedirect ("../citizen.html");
   }
+} catch (err) {
+  console.error("Error redirecting by role:", err);
+  smoothRedirect("../citizen.html");
+ }
 }
+
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -71,5 +80,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   }
 });
 onAuthStateChanged(auth, (user) => {
-  if (user) redirectByRole(user);
+  if (user && !sessionStorage.getItem("justLoggedIn")) {
+    redirectByRole(user);
+}
 });
