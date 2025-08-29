@@ -1,4 +1,9 @@
-// citizen.js
+/*
+ * LineLess – Your Queue Management App
+ * Copyright (c) 2025 Sbulele Landa
+ * Licensed under the MIT License
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
 import { 
   getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc 

@@ -1,3 +1,10 @@
+/*
+ * LineLess – Your Queue Management App
+ * Copyright (c) 2025 Sbulele Landa
+ * Licensed under the MIT License
+ */
+
+
 export function showSplash(title = "Loading...", options = {}) {
   const { tagline = "", duration = 1200, onComplete } = options;
 

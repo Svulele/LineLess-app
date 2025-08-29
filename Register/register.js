@@ -1,3 +1,9 @@
+/*
+ * LineLess – Your Queue Management App
+ * Copyright (c) 2025 Sbulele Landa
+ * Licensed under the MIT License
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { getAuth, updateProfile, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
