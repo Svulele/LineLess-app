@@ -1,8 +1,8 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { 
   getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc,  serverTimestamp, getDoc, getDocs, setDoc, addDoc, updateDoc, where
-} from "firebase/firestore";
-import { getAuth, signOut } from "firebase/auth";
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 // Firebase config
 const firebaseConfig = {

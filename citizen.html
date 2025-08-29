@@ -6,11 +6,9 @@
   <title>LineLess – Citizen</title>
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
-
-  <link href="style.css" rel="stylesheet" />
+  <link href="./style.css" rel="stylesheet" />
 </head>
 <body>
-  
   <div class="container">
     <header>
       <div class="logo">
@@ -33,8 +31,6 @@
 
     <main id="view-citizen">
       <div class="grid">
-
-        <!-- service list -->
         <section class="card">
           <h2>Find a service</h2>
           <div id="service-list" class="list">
@@ -42,7 +38,6 @@
           </div>
         </section>
 
-        <!-- queue details -->
         <section class="card">
           <h2 id="details-title">Queue details</h2>
           <div id="details-content" class="muted">
@@ -51,13 +46,11 @@
               <input type="text" id="idCard" placeholder="Enter your name" required />
               <button type="submit" class="btn primary full">Join Queue</button>
             </form>
-            
             <div id="queue-status"></div>
             <div id="inline-message" class="message info"></div>
           </div> 
         </section>
 
-        <!-- my ticket -->
         <section class="card">
           <h2>My Ticket</h2>
           <div id="my-ticket" class="muted">You haven’t joined a queue yet.</div>
@@ -66,7 +59,6 @@
             ETA: <span id="my-ticket-eta">--:--</span>
           </div>
         </section>
-
       </div>
     </main>
     
@@ -87,8 +79,11 @@
       <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
     </footer>
   </div>
- 
-  <script src="./citizen.js" type="module"></script>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.11.1/build/sha256.min.js"></script>
+  <script type="module" src="./citizen.js?v=2"></script>
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>

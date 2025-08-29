@@ -4,50 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LineLess – Register</title>
-    
-  <link rel="stylesheet" href="register.css" />
+  
+  <link rel="stylesheet" href="../Register/register.css" />
+  <link rel="stylesheet" href="../loading/loading.css" />
 
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
 </head>
 <body>
   <div id="splash"></div>
-  <div class="container auth-container">
-    <header>
-      <div class="logo">
-        <div class="logo-box">
-          <div class="logo-glyph">
-            <div class="bar a"></div>
-            <div class="bar b"></div>
-          </div>
-        </div>
-        <div>
-          <h1>LineLess</h1>
-          <div class="tag">Know when it’s your turn.</div>
+
+  <div class="register-container">
+    <div class="logo">
+      <div class="logo-box">
+        <div class="logo-glyph">
+          <div class="bar a"></div>
+          <div class="bar b"></div>
         </div>
       </div>
-    </header>
-    <br>
-    <div class="register-container">
-      <h1>Create an account</h1>
-      <form id="register-form">
-        <input type="text" id="name" placeholder="Full Name" required autocomplete="name" />
-        <input type="email" id="email" placeholder="Email" required autocomplete="email" />
-        <input type="text" id="idCard" placeholder="ID Card Number" required autocomplete="off" />
-        <input type="password" id="password" placeholder="Password" required autocomplete="new-password" />
-        <input type="password" id="confirm-password" placeholder="Confirm Password" required autocomplete="new-password" />
-        <button type="submit" class="login-btn">Register</button>
-      </form>
-      <p id="register-message"></p>
-      <p>Already have an account? <a href="../login/login.html">Login here</a></p>
+      <div class="logo-text">
+        <h1>LineLess</h1>
+        <div class="tagline">Know when it's your turn.</div>
+      </div>
     </div>
     
+     
+   
+
+    <h1>Register</h1>
+    <form id="register-form">
+      <input type="text" id="name" placeholder="Full Name" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="text" id="idCard" placeholder="ID Number" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+      <button type="submit">Register</button>
+      <div id="register-message" class="register-message"></div>
+    </form>
+
+    <p>Already have an account? <a href="../login/login.html">Login here</a></p>
 
     <footer>
       <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
     </footer>
   </div>
   
-  <script type="module" src="register.js"></script>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+  <script type="module" src="../Register/register.js"></script>
 </body>
 </html>

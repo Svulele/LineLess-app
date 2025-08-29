@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc } from "firebase/firestore"
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { showSplash } from "../loading/splash.js"; 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { showSplash } from "../loading/splash.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -16,71 +16,64 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const  db = getFirestore(app);
+const db = getFirestore(app);
 
-// This smoothes the redirect
+// Smooth fade-in for page load
 window.addEventListener("load", () => {
   document.body.classList.add("loaded");
 });
 
-function smoothRedirect(url) {
-  setTimeout(() => {
-    window.location.assign(url);
-  }, 600);
-}
-
+// Redirect user based on role
 async function redirectByRole(user) {
   try {
     const userDoc = await getDoc(doc(db, "users", user.uid));
+    const userdata = userDoc.exists() ? userDoc.data() : { name: user.email, role: "citizen" };
+    const role = userdata.role || "citizen";
 
-  if (!userDoc.exists()) {
-    console.warn("User document does not exist");
-    smoothRedirect("../citizen.html");
-   return;
+    sessionStorage.setItem("userName", userdata.name || user.email);
+    sessionStorage.setItem("isAdmin", role === "admin");
+
+    // Hide login form while splash shows
+    const authContainer = document.querySelector(".auth-container");
+    if (authContainer) {
+      authContainer.style.transition = "opacity 0.3s ease";
+      authContainer.style.opacity = 0;
+    }
+
+    // Show splash
+    showSplash(`Welcome back, ${userdata.name || "User"}!`, {
+      tagline: role === "admin" ? "Loading admin dashboard..." : "Loading citizen portal...",
+      duration: 1000,
+      onComplete: () => {
+        if (role === "admin") window.location.href = "../admin.html";
+        else window.location.href = "../citizen.html";
+      }
+    });
+
+  } catch (err) {
+    console.error("Error redirecting by role:", err);
+    window.location.href = "../citizen.html";
   }
-
-  const userdata = userDoc.data();
-  const role = userdata.role || "citizen";
-
-  sessionStorage.setItem("userName", userdata.name || user.email);
-  sessionStorage.setItem("isAdmin", role === "admin");
-
-  if (role === "admin") {
-    smoothRedirect( "../admin.html");
-  } else {
-    smoothRedirect ("../citizen.html");
-  }
-} catch (err) {
-  console.error("Error redirecting by role:", err);
-  smoothRedirect("../citizen.html");
- }
 }
 
-document.getElementById("login-form").addEventListener("submit", async (e) => {
+// Login form submission
+const loginForm = document.getElementById("login-form");
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
   const msg = document.getElementById("login-message");
-
   msg.textContent = "";
-  
+
   try {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
 
-    // Show splash with welcome
-    showSplash(`Welcome back, ${user.displayName || "User"}!`, () => {
-      redirectByRole(user);
-    });
-
+   
+    redirectByRole(user);
   } catch (err) {
     msg.textContent = err.message;
     msg.style.color = "red";
   }
-});
-onAuthStateChanged(auth, (user) => {
-  if (user && !sessionStorage.getItem("justLoggedIn")) {
-    redirectByRole(user);
-}
 });

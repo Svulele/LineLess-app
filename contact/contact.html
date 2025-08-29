@@ -4,10 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LineLess – Contact</title>
-  <link rel="stylesheet" href="./login/style.css" />
+  <link rel="stylesheet" href="../login/style.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text x='50' y='70' font-size='70' text-anchor='middle' fill='white'>L</text></svg>">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="text/javascript">
+  emailjs.init("F7BfnF2WCAQojG3Fe");
+</script>
 </head>
 <body>
+  <div id="splash"></div>
   <div class="container auth-container">
     <header>
       <div class="logo">
@@ -19,7 +24,7 @@
         </div>
         <div>
           <h1>LineLess</h1>
-          <div class="tag">Know when it’s your turn.</div>
+          <div class="tagline">Know when it’s your turn.</div>
         </div>
       </div>
     </header>
@@ -39,7 +44,12 @@
       <p>&copy; <span id="year"></span> LineLess. All rights reserved.</p>
     </footer>
   </div>
-
-  <script type="module" src="./contact.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const yearSpan = document.getElementById("year");
+   if(yearSpan) yearSpan.textContent = new Date().getFullYear();
+    });
+  </script>
+  <script type="module" src="../contact/contact.js?v=2"></script>
 </body>
 </html>

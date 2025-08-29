@@ -4,6 +4,14 @@
   margin: 0;
   padding: 0;
 }
+.fade-out-login {
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+body.splash-active {
+  background: rgba(30, 41, 59, 0.95);
+}
 
 /* Body */
 body {
@@ -14,6 +22,7 @@ body {
   align-items: center;
   min-height: 100vh;
   color: #1f2937;
+  
 }
 
 /* Container */
@@ -41,7 +50,6 @@ body {
   transform: translateY(-4px);
 }
 
-
 input, button {
   width: 100%;
   padding: 0.8rem 1rem;
@@ -50,7 +58,6 @@ input, button {
   border-radius: 0.5rem;
   transition: all 0.3s ease;
 }
-
 
 input:focus {
   border-color: #4f46e5;
@@ -71,7 +78,6 @@ button:hover {
   transform: translateY(-2px);
 }
 
-/* Logo Card Header */
 .logo {
   display: flex;
   align-items: center;
@@ -84,15 +90,21 @@ button:hover {
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
+
+
+/* Wrapping logo glyph (box) */
 .logo-box {
   width: 50px;
   height: 50px;
+  color: #fff;
   background: #2563eb;
   border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
+/* Logo icon inside box */
 .logo-glyph {
   width: 16px;
   height: 16px;
@@ -105,20 +117,31 @@ button:hover {
 }
 .logo-glyph .bar.a { width: 25%; height: 100%; left: 0; top: 0; }
 .logo-glyph .bar.b { width: 25%; height: 100%; right: 0; top: 0; }
+
 .logo h1 {
   font-size: 24px;
-  color: #fff;
+  color: #ffffff;
+  margin: 0;
 }
+
+
+.logo .tagline,
 .logo .tag {
-  font-size: 12px;
-  color: #94a3b8;
+  display: block;
+  font-size: 14px;
+  color: #ffffff !important;
+  margin-top: 4px;
+  line-height: 1.3;
+  text-align: left;
+  overflow: visible;
 }
+
 
 /* Login heading */
 .login-container h2 {
   font-size: 22px;
   margin-bottom: 20px;
-  color: #111827;
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -194,6 +217,7 @@ footer {
   z-index: 9999;
   color: white;
   opacity: 0;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
   pointer-events: none;
   transition: opacity 0.6s ease;
 }

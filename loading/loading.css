@@ -1,85 +1,109 @@
+/* Splash container */
 #splash {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgba(255,255,255,0.95);
+  background: rgba(30, 41, 59, 0.9); /* dark overlay */
   z-index: 9999;
-  animation: fadeSlideIn 0.6s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
 }
 
+/* Splash visible */
+#splash.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Splash card */
 #splash .splash-card {
-  background: #1e293b;
+  background: #111827;
   color: white;
   padding: 2rem 3rem;
   border-radius: 1rem;
   text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  transform: scale(0.8);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transform: scale(0.9);
   opacity: 0;
-  animation: popup 0.5s forwards;
+  animation: popup 0.5s forwards ease-out;
 }
 
+/* Logo box */
 #splash .logo-box {
   width: 80px;
   height: 80px;
   margin: 0 auto 16px;
+  background: #2563eb;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
 }
 
+/* Logo glyph bars */
 #splash .logo-glyph {
-  width: 100%;
-  height: 100%;
+  width: 60%;
+  height: 60%;
   position: relative;
 }
-
 #splash .logo-glyph .bar {
   position: absolute;
-  background: #2563eb;
+  background: white;
   border-radius: 4px;
 }
-
 #splash .logo-glyph .bar.a { width: 20%; height: 100%; left: 10%; top: 0; }
 #splash .logo-glyph .bar.b { width: 20%; height: 100%; right: 10%; top: 0; }
 
+/* Title & tagline */
+.splash-title, .tagline {
+  opacity: 1;
+  color: rgba(251, 249, 249, 0.85);
+}
+
+/* Tagline specific */
 #splash .tagline {
   margin-top: 8px;
   font-size: 1rem;
   color: #94a3b8;
 }
 
-#splash .loader {
-  margin-top: 1rem;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #4f46e5;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
+/* Animations */
 @keyframes popup {
-  0% { transform: scale(0.8); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-@keyframes fade-out {
-  to { opacity: 0; transform: scale(0.9); }
-}
-@keyframes fadeSlideIn {
+@keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.9); }
 }
 
+/* Apply fade-in sequence when splash shows */
+#splash.show .logo-box {
+  animation: fadeInUp 0.4s forwards 0.1s;
+}
+#splash.show .splash-title {
+  animation: fadeInUp 0.4s forwards 0.3s;
+}
+#splash.show .tagline {
+  animation: fadeInUp 0.4s forwards 0.5s;
+}
+
+/* Splash fade-out */
+#splash.fade-out {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
 #splash.fade-out .splash-card {
-  animation: fade-out 0.5s forwards;
-}
-
-@keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; visibility: hidden; }
+  opacity: 0;
+  animation: fade-out 0.35s forwards;
 }

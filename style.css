@@ -20,12 +20,9 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
   color: var(--text);
   background: linear-gradient(180deg, #fff 0%, #f8fafc 45%, var(--bg) 100%);
-  opacity: 0;
-  transition: opacity 0.3s ease
+
 }
-body.loaded {
-  opacity: 1;
-}
+
 
 /* Container + Header */
 .container {
@@ -530,4 +527,13 @@ footer {
   margin-top: 12px;
   font-size: 14px;
   color: green;
+}
+
+.fadeInUp {
+  animation: fadeInUp 0.5s forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
